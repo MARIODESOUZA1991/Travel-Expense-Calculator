@@ -1,0 +1,239 @@
+using System;
+using System.Collections.Generic;
+using System.Security.Claims;
+using Newtonsoft.Json;
+using System.IO;
+using System.Linq;
+
+
+namespace Travel_Expense_Form_Project__Mario_De_Souza_
+{
+    class Program
+    {
+        
+        public static double TotalPayment { get; private set; }
+        public static double AveragePayment { get; private set; }
+
+        static void Main(string[] args)
+        {
+
+            // Initialize lists for storing employee data
+            List<object> employees = new List<object>();
+            List<double> employeePayments = new List<double>();
+
+            // Welcome
+            Console.WriteLine("\n");
+            Console.WriteLine("----------------___HELLO___---------------");
+            Console.WriteLine("_________________________________________\n");
+            Console.WriteLine(" Welcome to the Expense Claims Calculator");
+            Console.WriteLine("_________________________________________");
+            Console.WriteLine("\n Please press ENTER to continue....");
+            Console.ReadLine();
+
+            // Asking user if they are an employee or an admin
+            Console.WriteLine("   Please type E for Employee");
+            Console.WriteLine("    Please type A for Admin");
+            string userType = Console.ReadLine();
+            Console.WriteLine("");
+
+
+            if (userType == "E" || userType == "e")
+            {
+
+
+                Console.WriteLine(" Please enter the ID number of the employee: \n (4 Digits Number starting from 1001)");
+                Console.WriteLine(" for example 1001 or 1002 0r 1003 :\n");
+
+                int numberOfEmployee = Convert.ToInt32(Console.ReadLine());
+                
+
+
+                for (int EmployeeID = numberOfEmployee; EmployeeID <= numberOfEmployee; EmployeeID++)
+                {
+                    Console.WriteLine($"\n Please enter details for employee ID {EmployeeID}:");
+
+                    // Asking user for input
+                    Console.WriteLine("\n Please Enter your Name: ");
+                    string userName = Console.ReadLine();
+
+                    Console.WriteLine("\n Please enter number of journeys completed");
+                    int numberOfJourneys = Convert.ToInt32(Console.ReadLine());
+
+                    Console.WriteLine($"\n You have entered the number \n of journeys completed as :{numberOfJourneys} \n");
+
+                    Console.WriteLine("\n Please enter the claim type\n");
+
+                    string claimType;
+                    while (true)
+                    {
+                        Console.WriteLine(" Please enter T for Travel OR \n Please enter TE for Travel & Expenses");
+                        claimType = Console.ReadLine();
+
+                        if (claimType == "T" || claimType == "TE")
+                        {
+
+                            break;
+
+                        }
+                        else
+                        {
+                            Console.WriteLine("\n Invalid claim type. Please try again.\n");
+                        }
+
+                    }
+                    Console.WriteLine($"\n You have selected the claim type as :{claimType} \n");
+
+
+
+
+
+
+                    // calculate expenses for each journey and payment required
+                    double totalTravelExpenses = 0.0;
+                    double totalFoodExpenses = 0.0;
+                    double totalExpenses = 0.0;
+                    double totalPaymentRequired = 0.0;
+
+                    for (int i = 1; i <= numberOfJourneys; i++)
+                    {
+                        Console.WriteLine($"\n Please enter Travel expenses for journey {i} : £ \n");
+                        double travelExpenses = Convert.ToDouble(Console.ReadLine());
+
+                        double foodExpenses = 0.0;
+                        if (claimType == "TE")
+                        {
+                            Console.WriteLine($"\n Please enter food expenses for journey {i} : £ \n");
+                            Console.WriteLine("\n Please Note: \n Employees can only Claim food expenses \n up to a maximum limit of £50 per journey. \n Anything over the limit of £50 \n will be covered by the employee. ");
+                            foodExpenses = Convert.ToDouble(Console.ReadLine());
+                        }
+
+                        totalTravelExpenses += travelExpenses;
+                        totalFoodExpenses += foodExpenses;
+                        totalExpenses += travelExpenses + foodExpenses;
+                        totalPaymentRequired += (travelExpenses + Math.Min(foodExpenses, 50.0));
+                    }
+
+
+                    // add employee payment to list
+                    employeePayments.Add(totalPaymentRequired);
+
+
+                    //Calculte reclaimable tax and non refundable amount
+                    double totalReclaimableTax = claimType == "TE" || claimType == "T" ? 0.2 * totalExpenses : 0.0;
+                    double nonRefundableAmount = totalExpenses - totalPaymentRequired;
+
+                    //Calculate total and average payments
+                    double totalPaymentMade = totalExpenses - nonRefundableAmount;
+                    double averagePaymentRequired = totalPaymentRequired / numberOfJourneys;
+                    double largestPaymentMade = totalPaymentRequired;
+
+                    // calculate total and average payment
+                    double totalPayment = employeePayments.Sum();
+                    double averagePayment = employeePayments.Average();
+
+
+                    // create Json object for user details
+                    var userDetails = new
+                    {
+                        UserName = userName,
+                        NumberOfJourneys = numberOfJourneys,
+                        ClaimType = claimType,
+                        TotalTravelCost = totalTravelExpenses,
+                        TotalFoodCost = totalFoodExpenses,
+                        TotalExpenses = totalExpenses,
+                        TotalReclaimableTax = totalReclaimableTax,
+                        TotalPaymentRequired = totalPaymentRequired,
+                        TotalPaymentMade = totalPaymentMade,
+                        NonRefundableAmount = nonRefundableAmount,
+                        AveragePaymentRequired = averagePaymentRequired,
+                        LargestPaymentMade = largestPaymentMade,
+                        TotalPayment = totalPayment,
+                        AveragePayment = averagePayment
+
+                    };
+                    // add user details to list
+                    employees.Add(userDetails);
+
+               
+
+                    // serialize list of employees to JSON string
+                    string json = JsonConvert.SerializeObject(employees);
+
+                    // save JSON string to file
+                    System.IO.File.WriteAllText(@"userDetails.json", json);
+
+                    //Print Receipt Details
+                    Console.WriteLine("\n\n");
+                    Console.WriteLine("---Receipt Details---");
+                    Console.WriteLine("_____________________");
+                    Console.WriteLine($" Employee Name : {userName}");
+                    Console.WriteLine($" Employee ID Number: {numberOfEmployee}");
+                    Console.WriteLine($" Number of Journeys Completed : {numberOfJourneys}");
+                    Console.WriteLine($" Claim Type : {claimType} ");
+                    Console.WriteLine($" Total cost of Travel Expenses : £{totalTravelExpenses:F2} ");
+                    Console.WriteLine($" Total cost of Food Expenses : £{totalFoodExpenses:F2} ");
+                    Console.WriteLine($" Total Expenses Claimed : £{totalExpenses:F2}");
+                    Console.WriteLine($" Reclaimable tax :£{totalReclaimableTax:F2}");
+                    Console.WriteLine($" Amount to be paid to employee:£ {totalPaymentRequired:F2}");
+                    Console.WriteLine($" Non refundable amount : £{nonRefundableAmount:F2}");
+
+                    Console.WriteLine("\n");
+                }
+                Console.WriteLine(" Thank you for using the Travel Expense Calcultor");
+                Console.ReadLine();
+            };
+
+
+
+
+
+            if (userType == "A" || userType == "a")
+            {
+                // read the JSON file containing employee data
+                string json = File.ReadAllText(@"userDetails.json");
+
+                // deserialize JSON string into list of employees
+                List<dynamic> employeeData = JsonConvert.DeserializeObject<List<dynamic>>(json);
+
+                // print employee data
+                foreach (var employee in employeeData)
+                {
+                    Console.WriteLine("--- Employee Details ---");
+                    Console.WriteLine($" Name: {employee.UserName}");
+                    Console.WriteLine($" Number of Journeys Completed: {employee.NumberOfJourneys}");
+                    Console.WriteLine($" Claim Type: {employee.ClaimType}");
+                    Console.WriteLine($" Total Travel Expenses: £{employee.TotalTravelCost:F2}");
+                    Console.WriteLine($" Total Food Expenses: £{employee.TotalFoodCost:F2}");
+                    Console.WriteLine($" Total Expenses: £{employee.TotalExpenses:F2}");
+                    Console.WriteLine($" Reclaimable Tax: £{employee.TotalReclaimableTax:F2}");
+                    Console.WriteLine($" Amount to be Paid to Employee: £{employee.TotalPaymentRequired:F2}");
+                    Console.WriteLine($" Total Payment Made: £{employee.TotalPaymentMade:F2}");
+                    Console.WriteLine($" Non-Refundable Amount: £{employee.NonRefundableAmount:F2}");
+                    Console.WriteLine($" Average Payment Required: £{employee.AveragePaymentRequired:F2}");
+                    Console.WriteLine($" Largest Payment Made: £{employee.LargestPaymentMade:F2}");
+                    Console.WriteLine("");
+                }
+
+
+                // print total and average payment for all employees
+                Console.WriteLine("--- Total and Average Payment ---");
+                Console.WriteLine($"Total Payment: £{TotalPayment:F2}");
+                Console.WriteLine($"Average Payment: £{AveragePayment:F2}");
+
+                Console.ReadLine();
+
+
+
+
+
+
+
+
+
+
+
+
+            }
+        }
+    }
+}
